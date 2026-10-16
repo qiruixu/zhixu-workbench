@@ -276,7 +276,8 @@ export function locate(): Promise<{ lat: number; lon: number }> {
         }
         reject(new Error(map[err.code] ?? '定位失败，请手动搜索城市'))
       },
-      { enableHighAccuracy: false, timeout: 10000, maximumAge: 10 * 60 * 1000 }
+      // Mac 的 WiFi 定位冷启动较慢（可达 10s+），超时放宽到 15s 避免「定位超时」误报
+      { enableHighAccuracy: false, timeout: 15000, maximumAge: 10 * 60 * 1000 }
     )
   })
 }
