@@ -10,6 +10,7 @@
     "dev:api": "node server/index.mjs",
     "build": "vite build",
     "build:web": "VITE_DIRECT=1 vite build --base=./ --outDir dist-web",
+    "build:single": "vite build --config vite.single.config.ts && node scripts/build-single.mjs",
     "start": "node server/index.mjs",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",

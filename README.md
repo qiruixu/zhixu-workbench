@@ -4,11 +4,30 @@
 
 ---
 
-## 快速开始（30 秒上手）
+## 快速开始（三种方式，按需挑一种）
 
-> **在线体验（免安装）**：
+### 方式一：下载单文件版，双击即用 ⭐推荐给非技术用户
+
+仓库根目录的 **[`zhixu-workbench.html`](./zhixu-workbench.html)**（约 1.1 MB）就是**完整应用本体**：
+
+1. 点开该文件 → 右上角 **Download** 下载；
+2. 用浏览器（Chrome / Edge / Firefox / Safari）**双击打开**即可使用。
+
+**不需要安装 Node.js、不需要命令行、不需要联网安装任何东西。** 导航、课表、日程、天气全部可用，
+数据保存在你自己浏览器的本地存储里，不经过任何服务器。
+
+> 单文件版内置「**直连模式**」：AI 与天气由浏览器直接请求你配置的服务商 / 公开数据源。
+> 因此 **AI 对话要求服务商支持浏览器跨域（CORS）**——DeepSeek、NVIDIA NIM、OpenAI、OpenRouter、
+> 硅基流动等主流服务都支持；个别不支持的服务，请改用方式三（走本地代理）。
+>
+> 想自己重新生成单文件版：`npm install && npm run build:single`。
+
+### 方式二：在线直接用（免安装，但需联网）
+
 > 国内网络建议用 [CloudStudio 演示站](https://ba090cdcaa6746b3a98dd5983ff8c2d6.app.workbuddy.host)；
 > 长期固定链接为 [GitHub Pages](https://qiruixu.github.io/zhixu-workbench/)（`github.io` 在部分国内网络下可能打不开，属正常现象）。
+
+### 方式三：本地运行源码（开发 / 自部署，功能最完整）
 
 本项目是**本地运行源码**，不需要全局安装、也没有安装包——把代码拉到本地、装依赖、起服务即可。
 
@@ -177,6 +196,7 @@ npm run dev
 | `npm run build` | 构建前端到 `dist/` |
 | `npm start` | 生产模式：单进程启动，同时托管前端页面与 AI 代理（默认 8787） |
 | `npm run typecheck` | TypeScript 类型检查 |
+| `npm run build:single` | 构建**单文件版**（IIFE + Hash 路由 + 直连模式），产物内联为根目录的 `zhixu-workbench.html` |
 
 > 生产模式：先 `npm run build`，再 `npm start`，然后访问 `http://127.0.0.1:8787`。
 > 端口可用环境变量调整：`API_PORT=9000 npm start`。
@@ -341,6 +361,10 @@ npm run dev
 - **PDF 课表属实验性解析**：能被表格折行拆开的长课程名、以及源文件里本身就重复的单元格，可能提取不全或产生少量冗余条目（界面会带同样的提醒）。有 `.xls / .xlsx / .csv` 时请优先用表格文件。
 - **旧版 Word 二进制 `.doc` 不支持**：这类文件不是 RTF、也不是表格，无法可靠取出表格结构；会明确提示「请在 Word / WPS 里另存为 .xlsx 或 .rtf 后再导入」。
 - **课表不含上课时间**：教务导出的文件里通常没有每节课的起止时间，因此界面只显示「第 X 节 / 第 X 大节」，不虚构时间。
+- **单文件版（`zhixu-workbench.html`）的两点注意**：
+  1. 它是用 `file://` 打开的静态页面，AI 采用浏览器直连，因此**要求服务商支持跨域（CORS）**；个别不支持的服务请改用方式三（本地代理）。
+  2. `file://` 下浏览器把本地文件视为同一个存储来源，所以单文件版的数据会与**其它本地 HTML 页面**共用一份浏览器存储（与正常网站的存储互不影响），但不建议把不同版本的单文件放在同一浏览器里长期混用。
+- **单文件版更新方式**：升级时重新下载覆盖即可；数据存在浏览器里，不受影响。
 
 ---
 
@@ -351,12 +375,15 @@ zhixu-workbench/
 ├── index.html
 ├── package.json
 ├── vite.config.ts            # Vite 配置（含 /api → 本地代理）
+├── vite.single.config.ts     # 单文件版构建配置（IIFE + Hash 路由 + 直连模式）
 ├── tsconfig.json
+├── zhixu-workbench.html      # 单文件版成品（下载后双击即用）
 ├── server/
 │   └── index.mjs             # 本地后端：AI 转发 + 引导配置 + 天气/地理接口（仅 127.0.0.1）
 ├── .local/                    # 本地引导配置（含明文密钥，已 gitignore）
 │   └── ai-config.json         # 可选：让新浏览器打开即自动完成 AI 配置
 ├── scripts/
+│   ├── build-single.mjs      # npm run build:single：把产物内联成单文件 HTML
 │   ├── pack-share.mjs        # npm run pack:share：生成不含密钥的分发包
 │   └── scan-secrets.mjs      # npm run scan:secrets：提交前密钥扫描
 ├── docs/
