@@ -1,0 +1,22 @@
+{
+  "kind": "zhixu-nav",
+  "version": 1,
+  "exportedAt": 1792067000000,
+  "categories": [
+    { "id": "c-test", "name": "导入测试", "color": "#10b981", "icon": "FlaskConical", "order": 0, "createdAt": 1792067000000 }
+  ],
+  "sites": [
+    {
+      "id": "s-test-1",
+      "title": "示例文档站",
+      "url": "https://example.com/docs",
+      "categoryId": "c-test",
+      "order": 0,
+      "favorite": false,
+      "pinned": false,
+      "description": "用于验证导入流程",
+      "createdAt": 1792067000000,
+      "opens": 0
+    }
+  ]
+}

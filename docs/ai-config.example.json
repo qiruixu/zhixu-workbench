@@ -1,0 +1,22 @@
+{
+  "_说明": "本地引导配置模板。复制到项目根目录的 .local/ai-config.json 并按需修改，重启服务后生效。此模板不含任何真实密钥，可安全随源码分发。",
+  "_安全提示": "ai-config.json 会包含明文 API Key，请勿提交到 Git、勿放入分享包。",
+
+  "activeConfigName": "NVIDIA NIM",
+  "configs": [
+    {
+      "name": "NVIDIA NIM",
+      "providerId": "nvidia",
+      "baseUrl": "https://integrate.api.nvidia.com/v1",
+      "chatPath": "/chat/completions",
+      "modelsPath": "/models",
+      "authStyle": "bearer",
+      "apiKey": "把这里换成你自己的 API Key",
+      "model": "deepseek-ai/deepseek-v4.1-flash",
+      "models": ["deepseek-ai/deepseek-v4.1-flash"],
+      "params": { "temperature": 0.7, "maxTokens": 4096, "topP": 1 },
+      "persistKey": true,
+      "stream": true
+    }
+  ]
+}

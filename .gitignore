@@ -1,0 +1,21 @@
+node_modules
+dist
+dist-*
+dist-ssr
+# 本地引导配置：含明文 API Key，绝不提交
+.local/
+*.local
+# 分发包 / 桌面版构建输出
+share/
+release/
+*.tgz
+.tmp-test/
+.DS_Store
+.vscode/*
+!.vscode/extensions.json
+.idea
+*.log
+npm-debug.log*
+.env
+.env.*
+!.env.example
