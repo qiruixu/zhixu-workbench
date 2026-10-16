@@ -9,7 +9,7 @@ export interface NavSnapshot {
 }
 
 export interface PreviewLine {
-  kind: 'add-category' | 'assign' | 'merge' | 'update' | 'delete-category' | 'skip'
+  kind: 'add-category' | 'add-site' | 'assign' | 'merge' | 'update' | 'delete-category' | 'skip'
   text: string
 }
 
@@ -100,6 +100,24 @@ export function describeSuggestion(s: NavSuggestion, snap: NavSnapshot): Preview
           lines.push({
             kind: 'delete-category',
             text: `删除分类「${op.name}」（其中 ${count} 个网站将变为未分类）`,
+          })
+        }
+        break
+      }
+      case 'addSite': {
+        const urlKey = norm(op.url.replace(/\/+$/, ''))
+        const dup = snap.sites.find((s) => norm(s.url.replace(/\/+$/, '')) === urlKey)
+        if (dup) {
+          lines.push({
+            kind: 'skip',
+            text: `「${op.title}」的网址与已有站点「${dup.title}」相同，跳过`,
+          })
+        } else {
+          lines.push({
+            kind: 'add-site',
+            text: `新增网站「${op.title}」${op.description ? `（${op.description}）` : ''} → ${
+              op.categoryName ? `分类「${op.categoryName}」` : '未分类'
+            }${op.pinned ? '，置顶' : ''}`,
           })
         }
         break
@@ -212,6 +230,28 @@ export async function applySuggestion(
           await db.categories.delete(cat.id)
           live.categories = live.categories.filter((c) => c.id !== cat.id)
           result.changed += 1 + affected.length
+          break
+        }
+        case 'addSite': {
+          const urlKey = norm(op.url.replace(/\/+$/, ''))
+          const dup = live.sites.find((s) => norm(s.url.replace(/\/+$/, '')) === urlKey)
+          if (dup) break
+          const cat = op.categoryName ? await ensureCategory(op.categoryName) : undefined
+          const site: Site = {
+            id: uid('s-'),
+            title: op.title,
+            url: op.url,
+            categoryId: cat?.id ?? null,
+            description: op.description,
+            order: siteOrder++,
+            favorite: false,
+            pinned: op.pinned === true,
+            createdAt: Date.now(),
+            opens: 0,
+          }
+          await db.sites.put(site)
+          live.sites.push(site)
+          result.changed++
           break
         }
       }

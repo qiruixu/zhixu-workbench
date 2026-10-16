@@ -177,6 +177,14 @@ export type NavSuggestionOp =
   | { op: 'mergeCategories'; from: string[]; into: string; reason?: string }
   | { op: 'updateSite'; siteId: string; siteTitle: string; title?: string; description?: string }
   | { op: 'deleteCategory'; name: string; reason?: string }
+  | {
+      op: 'addSite'
+      title: string
+      url: string
+      categoryName?: string
+      description?: string
+      pinned?: boolean
+    }
 
 export interface NavSuggestion {
   summary: string

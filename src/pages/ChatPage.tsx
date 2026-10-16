@@ -353,7 +353,7 @@ export default function ChatPage() {
         </div>
         <div className="border-t border-border p-3">
           <Button variant="outline" className="w-full" onClick={() => setShowNavAssistant(true)}>
-            <Wand2 size={15} /> 整理我的导航
+            <Wand2 size={15} /> AI 整理导航 / 找网站
           </Button>
         </div>
       </aside>

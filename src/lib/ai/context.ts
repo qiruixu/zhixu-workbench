@@ -19,7 +19,7 @@ import {
   WEEK_LABELS_CN,
 } from '../timetable/repo'
 import { fetchWeather, loadLocation, placeLabel, weatherText } from '../weather'
-import type { MemoNote, TimetableMeta, WeekAnchor } from '../types'
+import type { Course, MemoNote, TimetableMeta, WeekAnchor } from '../types'
 
 export interface AIContextOptions {
   includeTimetable: boolean
@@ -89,6 +89,39 @@ function renderCourses(
   return out
 }
 
+/**
+ * 课表全览：按星期几分组，列出每门课的节次/名称/周次/地点/教师。
+ * 与「未来几天明细」互补——明细覆盖近期，全览覆盖整个学期的结构，
+ * 让 AI 既能答「下周一第一节是什么」，也能答「某门课第几周到第几周上」。
+ */
+function renderOverview(meta: TimetableMeta): string[] {
+  const byDay = new Map<number, Course[]>()
+  for (const c of meta.courses) {
+    const arr = byDay.get(c.weekday) ?? []
+    arr.push(c)
+    byDay.set(c.weekday, arr)
+  }
+  const out: string[] = []
+  for (let wd = 1; wd <= 7; wd++) {
+    const list = (byDay.get(wd) ?? []).sort(
+      (a, b) => (a.periods[0] ?? 99) - (b.periods[0] ?? 99) || a.name.localeCompare(b.name, 'zh')
+    )
+    if (list.length === 0) continue
+    const items = list.map((c) => {
+      const seg = [
+        c.periodLabel || c.section || '',
+        c.name,
+        c.weeks ? `第${c.weeks}周` : '',
+        c.location ? `@${c.location}` : '',
+        c.teacher ? `(${c.teacher})` : '',
+      ].filter(Boolean)
+      return seg.join(' ')
+    })
+    out.push(`- 周${WEEK_LABELS_CN[wd - 1]}：${items.join('；')}`)
+  }
+  return out
+}
+
 function renderMemos(memos: MemoNote[]): string[] {
   if (memos.length === 0) return ['- （未来两周内没有记录待办）']
   const byDate = new Map<string, MemoNote[]>()
@@ -123,12 +156,15 @@ export async function buildAIContext(opts: AIContextOptions): Promise<AIContextR
 
   // 课表
   if (opts.includeTimetable && meta && meta.courses.length > 0) {
-    const days = opts.courseDays ?? 3
+    const days = opts.courseDays ?? 7
     const lines: string[] = []
     lines.push(
       `【我的课表】${meta.semester ? `${meta.semester}，` : ''}共 ${meta.courses.length} 门课程`
     )
+    lines.push(`（未来 ${days} 天明细）`)
     lines.push(...renderCourses(meta, anchor, days))
+    lines.push('（完整课表：按星期列出所有课程及其周次范围，可用于回答任意周次/日期的问题）')
+    lines.push(...renderOverview(meta))
     if (meta.remarks.length) lines.push(`- 其它安排：${meta.remarks.join('；')}`)
     blocks.push(lines.join('\n'))
     sections.push('课表')

@@ -3,8 +3,8 @@ import type { ChatMessage, NavSuggestion } from '../types'
 import { uid } from '../utils'
 import type { NavSnapshot } from '../navOps'
 
-const SYSTEM = `你是「智序工作台」的导航整理助手。用户持有一个个人网站导航（含分类与网站）。
-你的任务：根据用户诉求，给出对导航结构的整理建议。
+const SYSTEM = `你是「智序工作台」的导航助手。用户持有一个个人网站导航（含分类与网站）。
+你的任务：根据用户诉求，给出对导航的整理建议，或推荐新的网站。
 
 严格要求：
 1. 只输出一个 JSON 对象，不要输出任何解释文字、不要用 Markdown 代码块。
@@ -19,9 +19,11 @@ const SYSTEM = `你是「智序工作台」的导航整理助手。用户持有�
    - {"op":"mergeCategories","from":["分类A","分类B"],"into":"合并后分类名","reason":"理由"}
    - {"op":"updateSite","siteId":"站点id","siteTitle":"站点名称","title":"新名称（可选）","description":"新简介（可选）"}
    - {"op":"deleteCategory","name":"分类名","reason":"理由"}
+   - {"op":"addSite","title":"网站名称","url":"https://...","categoryName":"建议分类（可选）","description":"一句话简介（可选）","pinned":true}
 4. 只能依据下面提供的数据做判断。你并没有访问这些网站的真实内容，禁止声称已访问或已知其真实用途；对不确定的网站，请基于名称/域名做保守推断，或干脆不改。
 5. 若数据已足够合理，ops 可为空数组。
-6. 不要编造数据中不存在的站点 id。`
+6. 不要编造数据中不存在的站点 id。
+7. 当用户想「找 / 推荐 / 添加网站」时使用 addSite：url 必须是真实存在、广为人知的站点（用你训练数据里确信的官网域名），禁止编造或猜测不确定的网址；给出 categoryName 归类与 description，把最推荐、最常用的设为 pinned:true。`
 
 export function buildNavContext(snap: NavSnapshot): string {
   const cats = snap.categories
@@ -130,6 +132,26 @@ export function parseNavSuggestion(text: string): NavSuggestion | null {
             reason: typeof op.reason === 'string' ? op.reason : undefined,
           })
         break
+      case 'addSite': {
+        const title = typeof op.title === 'string' ? op.title.trim() : ''
+        const url = typeof op.url === 'string' ? op.url.trim() : ''
+        if (!title || !url || !/^https?:\/\//i.test(url)) break
+        ops.push({
+          op: 'addSite',
+          title: title.slice(0, 60),
+          url,
+          categoryName:
+            typeof op.categoryName === 'string' && op.categoryName.trim()
+              ? op.categoryName.trim().slice(0, 40)
+              : undefined,
+          description:
+            typeof op.description === 'string' && op.description.trim()
+              ? op.description.trim()
+              : undefined,
+          pinned: op.pinned === true,
+        })
+        break
+      }
     }
   }
 

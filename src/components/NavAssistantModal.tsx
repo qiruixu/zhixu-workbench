@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { Wand2, TriangleAlert, Sparkles, CheckCircle2, XCircle } from 'lucide-react'
+import { Wand2, TriangleAlert, Sparkles, CheckCircle2, XCircle, Globe } from 'lucide-react'
 import { db, resolveApiKey } from '../lib/db'
 import type { AIConfig, NavSuggestion } from '../lib/types'
 import { streamChat } from '../lib/ai/client'
@@ -10,11 +10,20 @@ import { cn } from '../lib/utils'
 import { useApp } from '../store/ctx'
 import { Badge, Button, Modal, Textarea } from './ui'
 
-const PRESETS = [
+type Mode = 'organize' | 'recommend'
+
+const ORGANIZE_PRESETS = [
   '按用途重新分类，让同类网站聚在一起',
   '检查有没有重复或该合并的分类',
   '为没有分类的网站推荐合适的分类',
   '看看分类是否过多，能否精简',
+]
+
+const RECOMMEND_PRESETS = [
+  '帮我推荐几个写论文 / 查文献常用的网站，分好类、重要的置顶',
+  '推荐几个程序员常用网站（文档、工具、社区），分好类',
+  '推荐一些高效学习 / 记笔记 / 时间管理的网站',
+  '推荐一些设计 / 素材 / 图库网站',
 ]
 
 export function NavAssistantModal({ open, onClose }: { open: boolean; onClose: () => void }) {
@@ -25,12 +34,26 @@ export function NavAssistantModal({ open, onClose }: { open: boolean; onClose: (
 
   const cfg = configs.find((c) => c.id === activeConfigId) ?? null
 
-  const [request, setRequest] = useState(PRESETS[0])
+  const [mode, setMode] = useState<Mode>('organize')
+  const [request, setRequest] = useState(ORGANIZE_PRESETS[0])
   const [loading, setLoading] = useState(false)
   const [raw, setRaw] = useState('')
   const [suggestion, setSuggestion] = useState<NavSuggestion | null>(null)
   const [applied, setApplied] = useState<ApplyResult | null>(null)
   const [error, setError] = useState('')
+
+  const presets = mode === 'organize' ? ORGANIZE_PRESETS : RECOMMEND_PRESETS
+
+  const switchMode = (m: Mode) => {
+    if (m === mode) return
+    setMode(m)
+    setRequest(m === 'organize' ? ORGANIZE_PRESETS[0] : RECOMMEND_PRESETS[0])
+    setSuggestion(null)
+    setRaw('')
+    setError('')
+    setApplied(null)
+    setLoading(false)
+  }
 
   useEffect(() => {
     if (!open) {
@@ -57,8 +80,8 @@ export function NavAssistantModal({ open, onClose }: { open: boolean; onClose: (
       setError('当前 AI 配置没有可用的 API Key。')
       return
     }
-    if (sites.length === 0) {
-      setError('当前没有任何网站可供分析。')
+    if (mode === 'organize' && sites.length === 0) {
+      setError('当前没有任何网站可供分析，可以先在「找网站」里让 AI 帮你添加。')
       return
     }
 
@@ -112,6 +135,7 @@ export function NavAssistantModal({ open, onClose }: { open: boolean; onClose: (
 
   const KIND_STYLE: Record<string, string> = {
     'add-category': 'text-success',
+    'add-site': 'text-success',
     assign: 'text-primary',
     merge: 'text-primary',
     update: 'text-warning',
@@ -123,8 +147,12 @@ export function NavAssistantModal({ open, onClose }: { open: boolean; onClose: (
     <Modal
       open={open}
       onClose={onClose}
-      title="整理我的导航"
-      description="AI 只负责提建议；所有改动都会先展示预览，需你确认后才会执行。"
+      title={mode === 'organize' ? '整理我的导航' : '让 AI 帮你找网站'}
+      description={
+        mode === 'organize'
+          ? 'AI 只负责提建议；所有改动都会先展示预览，需你确认后才会执行。'
+          : '描述你想要的网站类型，AI 会推荐并自动分类、置顶；确认后一键加入导航栏。'
+      }
       width="max-w-2xl"
       footer={
         <>
@@ -162,10 +190,35 @@ export function NavAssistantModal({ open, onClose }: { open: boolean; onClose: (
           </div>
         )}
 
+        <div className="flex gap-1 rounded-xl border border-border bg-surface-2 p-1">
+          <button
+            onClick={() => switchMode('organize')}
+            className={cn(
+              'flex-1 rounded-lg px-3 py-1.5 text-[12.5px] font-medium transition-colors',
+              mode === 'organize' ? 'bg-surface text-text shadow-sm' : 'text-muted hover:text-text'
+            )}
+          >
+            <Wand2 size={13} className="mr-1 inline-block" />
+            整理现有导航
+          </button>
+          <button
+            onClick={() => switchMode('recommend')}
+            className={cn(
+              'flex-1 rounded-lg px-3 py-1.5 text-[12.5px] font-medium transition-colors',
+              mode === 'recommend' ? 'bg-surface text-text shadow-sm' : 'text-muted hover:text-text'
+            )}
+          >
+            <Globe size={13} className="mr-1 inline-block" />
+            找网站
+          </button>
+        </div>
+
         <div>
-          <div className="mb-2 text-[13px] font-medium text-text">你想怎么整理？</div>
+          <div className="mb-2 text-[13px] font-medium text-text">
+            {mode === 'organize' ? '你想怎么整理？' : '你想要哪类网站？'}
+          </div>
           <div className="mb-2.5 flex flex-wrap gap-1.5">
-            {PRESETS.map((p) => (
+            {presets.map((p) => (
               <button
                 key={p}
                 onClick={() => setRequest(p)}
@@ -202,13 +255,13 @@ export function NavAssistantModal({ open, onClose }: { open: boolean; onClose: (
         {suggestion ? (
           <div className="rounded-xl border border-border bg-surface">
             <div className="border-b border-border px-3.5 py-2.5">
-              <div className="text-[13px] font-semibold text-text">修改预览</div>
+              <div className="text-[13px] font-semibold text-text">变更预览</div>
               <div className="mt-0.5 text-[12.5px] text-muted">{suggestion.summary}</div>
             </div>
             <div className="max-h-64 space-y-1.5 overflow-y-auto p-2.5">
               {preview.length === 0 ? (
                 <p className="px-2 py-3 text-center text-[12.5px] text-muted">
-                  AI 认为当前导航已经比较合理，没有需要调整的地方。
+                  AI 认为没有需要调整的地方。
                 </p>
               ) : (
                 preview.map((line, i) => (
