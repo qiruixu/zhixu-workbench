@@ -6,6 +6,10 @@
 
 ## 快速开始（30 秒上手）
 
+> **在线体验（免安装）**：
+> 国内网络建议用 [CloudStudio 演示站](https://ba090cdcaa6746b3a98dd5983ff8c2d6.app.workbuddy.host)；
+> 长期固定链接为 [GitHub Pages](https://qiruixu.github.io/zhixu-workbench/)（`github.io` 在部分国内网络下可能打不开，属正常现象）。
+
 本项目是**本地运行源码**，不需要全局安装、也没有安装包——把代码拉到本地、装依赖、起服务即可。
 
 ```bash
@@ -603,7 +607,7 @@ npm run dev          # 打开 http://localhost:5173
 
 ---
 
-## 16. 部署到静态网站（无本地后端模式）
+## 17. 部署到静态网站（无本地后端模式）
 
 本应用默认需要一个本地 Node 代理后端（8787）来转发 AI 与天气请求。但如果你只想把**前端静态托管**到任意静态空间（CloudStudio、GitHub Pages、Vercel、Netlify 等），可以用「直连模式」构建：AI 与天气改为由浏览器**直接**请求你配置的服务商 / 公开数据源（Open-Meteo、BigDataCloud 都支持浏览器跨域），无需任何后端。
 
@@ -622,6 +626,33 @@ npm run build:web
 - 构建产物用的是相对路径（`base: './'`），挂在子路径下也能正常加载。
 
 > 部署到静态空间后，应用首屏会尝试拉取 `/api/bootstrap`（本地引导配置）；该接口不存在时**自动跳过**，不影响使用——用户首次打开是一个空的、等待自己配置的工作台。
+
+### 17.1 部署到 GitHub Pages（地址固定不变）
+
+本项目已按 GitHub Pages 配好，仓库的 `gh-pages` 分支即线上站点，Pages 的 Source 选该分支即可，**地址永久固定**：
+
+```
+https://<用户名>.github.io/<仓库名>/     # 本项目：https://qiruixu.github.io/zhixu-workbench/
+```
+
+更新流程（每次改完代码重新发布一次该分支即可，地址不变）：
+
+```bash
+# 1) 用子路径 base 构建（base 必须与仓库名一致）
+npx vite build --base=/zhixu-workbench/ --outDir dist-pages
+
+# 2) 补两个静态托管必需的小文件
+cp dist-pages/index.html dist-pages/404.html   # SPA 深链接兜底（BrowserRouter 需要）
+touch dist-pages/.nojekyll                     # 跳过 Jekyll 处理
+
+# 3) 把 dist-pages/ 的内容发布到 gh-pages 分支
+```
+
+> ⚠️ **两个容易踩的坑**（本项目已处理）：
+> 1. **路由 basename**：`src/main.tsx` 里 `BrowserRouter` 的 `basename` 跟随 `import.meta.env.BASE_URL`。子路径部署必须设置 base，否则路由会被 `*` 兜底重定向回根目录，表现为白屏或跳转错误。
+> 2. **深链接 404**：静态托管没有服务端回退，直接访问 `/chat`、`/ai` 会 404，需要 `404.html` 兜底（内容与 `index.html` 相同）。
+>
+> 另外：`github.io` 域名在**部分国内网络**下无法访问，如需给国内用户使用，建议同时部署到国内可访问的静态托管（如 CloudStudio、腾讯云 COS、Vercel 自定义域名等）。
 
 
 
