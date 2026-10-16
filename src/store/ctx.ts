@@ -43,6 +43,11 @@ export interface AppCtxValue {
    */
   focusDate: string
   setFocusDate: (dateKey: string) => void
+
+  /** 新手指引：首次访问自动打开，也可从侧栏/设置里主动打开 */
+  guideOpen: boolean
+  openGuide: () => void
+  closeGuide: () => void
 }
 
 export const AppCtx = createContext<AppCtxValue | null>(null)

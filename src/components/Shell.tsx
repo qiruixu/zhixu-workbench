@@ -14,6 +14,7 @@ import { db } from '../lib/db'
 import type { AIConfig } from '../lib/types'
 import { cn } from '../lib/utils'
 import { useApp } from '../store/ctx'
+import { OnboardingGuide, GuideTrigger } from './OnboardingGuide'
 import { ConfirmHost, Toaster } from './ui'
 import { Badge } from './ui'
 
@@ -75,7 +76,7 @@ function ActiveModelChip() {
 }
 
 export function Shell() {
-  const { ready } = useApp()
+  const { ready, guideOpen, openGuide, closeGuide } = useApp()
   const loc = useLocation()
 
   if (!ready) {
@@ -109,6 +110,7 @@ export function Shell() {
               key={to}
               to={to}
               end={end}
+              data-guide={to === '/chat' ? 'nav-chat' : to === '/ai' ? 'nav-ai' : undefined}
               className={({ isActive }) =>
                 cn(
                   'group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all',
@@ -137,6 +139,7 @@ export function Shell() {
         <div className="mt-4 space-y-3">
           <ActiveModelChip />
           <ThemeToggle />
+          <GuideTrigger onClick={openGuide} />
         </div>
       </aside>
 
@@ -183,6 +186,7 @@ export function Shell() {
 
       <Toaster />
       <ConfirmHost />
+      {guideOpen ? <OnboardingGuide onClose={closeGuide} /> : null}
     </div>
   )
 }

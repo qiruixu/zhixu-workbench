@@ -56,3 +56,10 @@ export function formatMonthDay(key: string): string {
   const d = parseDateKey(key)
   return `${d.getMonth() + 1} 月 ${d.getDate()} 日`
 }
+
+/** 依据「开学第一周周一」推算给定日期属于第几周；无效返回 null */
+export function weekFromSemesterStart(startKey: string, dateKey: string): number | null {
+  if (!startKey) return null
+  const week = weeksBetween(startKey, dateKey) + 1
+  return week >= 1 && week <= 60 ? week : null
+}

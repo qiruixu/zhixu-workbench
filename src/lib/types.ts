@@ -234,8 +234,18 @@ export interface TimetableMeta {
   studentId?: string
   /** 学年学期，如 2026-2027学年 第1学期 */
   semester?: string
-  /** 开学第一周周一（YYYY-MM-DD）。表格类由用户设定；日历（.ics）类按课程日期自动推算 */
+  /** 开学第一周周一（YYYY-MM-DD）。表格类由用户设定或自动推断；日历（.ics）类按课程日期自动推算 */
   semesterStart?: string
+  /**
+   * 「当前第几周」是怎么来的——用于界面上如实说明（自动定位？手动校准？日历推算？）
+   * 没有该字段表示老数据/尚未定位。
+   */
+  weekAuto?: {
+    source: 'calendar' | 'semester' | 'auto' | 'manual'
+    confidence: 'high' | 'medium' | 'low'
+    note: string
+    at: number
+  }
   /** 解析时的 sheet 名 */
   sheetName: string
   weekdays: string[]

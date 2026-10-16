@@ -394,6 +394,7 @@ export default function ChatPage() {
 
           <button
             onClick={() => void toggleContext()}
+            data-guide="chat-context"
             title={
               contextOn
                 ? '已开启：AI 会读取你的课表、日程与位置天气'

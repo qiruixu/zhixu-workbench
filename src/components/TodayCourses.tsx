@@ -10,9 +10,11 @@ import {
   MapPin,
   RefreshCw,
   Settings2,
+  Sparkles,
   Trash2,
   Upload,
   User as UserIcon,
+  Wand2,
 } from 'lucide-react'
 import { db } from '../lib/db'
 import type { Course, TimetableMeta, WeekAnchor } from '../lib/types'
@@ -33,6 +35,7 @@ import {
   weekdayOfDateKey,
   weekFromSemesterStart,
 } from '../lib/timetable/repo'
+import { inferWeek, semesterStartFromText } from '../lib/timetable/infer'
 import { cn, timeAgo } from '../lib/utils'
 import { useApp } from '../store/ctx'
 import { IconButton, Spinner } from './ui'
@@ -84,8 +87,48 @@ export function TodayCourses() {
   const applyWeek = async (n: number) => {
     const w = Math.min(60, Math.max(1, n))
     await saveWeekAnchor(w, focusDate)
+    if (meta) {
+      await db.timetable.put({
+        ...meta,
+        weekAuto: {
+          source: 'manual',
+          confidence: 'high',
+          note: '你手动设定的周次',
+          at: Date.now(),
+        },
+      })
+    }
     setWeekDraft(String(w))
     toast(`已把 ${formatMonthDay(focusDate)} 设为第 ${w} 周，之后会自动更新`, 'success')
+  }
+
+  /** 根据课表内容自动定位「当前是第几周」 */
+  const autoLocate = async () => {
+    if (!meta) return
+    const inf = inferWeek(meta.courses, meta.semester, todayKey())
+    if (!inf) {
+      const sem = semesterStartFromText(meta.semester)
+      toast(
+        sem
+          ? `课表标注的是「${sem.label}」，当前日期不在该学期内，请手动设定周次`
+          : '课表里没有日期或学期信息，无法自动判断，请手动设定',
+        'info'
+      )
+      return
+    }
+    await db.timetable.put({
+      ...meta,
+      semesterStart: inf.semesterStart,
+      weekAuto: {
+        source: inf.source,
+        confidence: inf.confidence,
+        note: inf.note,
+        at: Date.now(),
+      },
+    })
+    await saveWeekAnchor(inf.week, todayKey())
+    setFocusDate(todayKey())
+    toast(`已自动定位：今天是第 ${inf.week} 周（${inf.note}）`, 'success')
   }
 
   const handleFiles = async (files: FileList | null) => {
@@ -107,7 +150,13 @@ export function TodayCourses() {
 
   const setSemesterStart = async (value: string) => {
     if (!meta) return
-    await db.timetable.put({ ...meta, semesterStart: value || undefined })
+    await db.timetable.put({
+      ...meta,
+      semesterStart: value || undefined,
+      weekAuto: value
+        ? { source: 'manual', confidence: 'high', note: '按你填写的开学日推算', at: Date.now() }
+        : meta.weekAuto,
+    })
     if (value) {
       const w = weekFromSemesterStart(value, focusDate)
       if (w) await saveWeekAnchor(w, focusDate)
@@ -228,7 +277,23 @@ export function TodayCourses() {
       {/* 设置条 */}
       {meta && showSettings ? (
         <div className="mb-3 space-y-2.5 rounded-xl border border-border bg-surface-2 p-3">
-          <div>
+          <div className="flex items-center justify-between gap-2">
+            <span className="flex items-center gap-1.5 text-[12px] font-medium text-text">
+              <Wand2 size={13} className="text-primary" /> 自动定位周次
+            </span>
+            <button
+              onClick={() => void autoLocate()}
+              className="rounded-lg border border-primary/40 bg-primary-soft px-2.5 py-1.5 text-[12px] text-primary transition-colors hover:bg-primary/15"
+            >
+              根据课表自动判断
+            </button>
+          </div>
+          <p className="text-[11px] leading-relaxed text-faint">
+            依据课表里的学期信息（或常见开学周）推断「今天是第几周」，之后每自然周自动 +1。
+            {meta.weekAuto ? ` 当前来源：${meta.weekAuto.note}` : ''}
+          </p>
+
+          <div className="border-t border-border pt-2.5">
             <span className="mb-1 block text-[12px] font-medium text-text">
               自定义周次（记住后会自动往后更新）
             </span>
@@ -294,10 +359,29 @@ export function TodayCourses() {
         </div>
       ) : null}
 
+      {/* 周次来源说明：已自动定位 / 尚未定位 */}
+      {meta && week != null && meta.weekAuto ? (
+        <p className="mb-2.5 flex flex-wrap items-center gap-x-1.5 rounded-lg border border-border bg-surface-2 px-2.5 py-1.5 text-[11.5px] leading-relaxed text-muted">
+          <Sparkles size={12} className="shrink-0 text-primary" />
+          <span className="font-medium text-text">已自动定位：当前第 {week} 周</span>
+          <span className="text-faint">· {meta.weekAuto.note}</span>
+          {meta.weekAuto.source !== 'manual' && meta.weekAuto.confidence !== 'high' ? (
+            <button onClick={() => setShowSettings(true)} className="text-primary hover:underline">
+              如不符，点此校准
+            </button>
+          ) : null}
+        </p>
+      ) : null}
+
       {/* 未设周次时的说明：避免用户误以为课表数据有问题 */}
       {meta && week == null ? (
         <p className="mb-2.5 rounded-lg border border-border bg-surface-2 px-2.5 py-1.5 text-[11.5px] leading-relaxed text-muted">
-          尚未设置周次，这里显示当天全部课程（不按周次过滤）。点右上角齿轮设定「今天是第几周」，即可只看本周实际要上的课。
+          尚未确定当前周次，这里显示当天全部课程（不按周次过滤）。
+          {meta.semester ? `课表标注「${meta.semester}」。` : ''}
+          <button onClick={() => void autoLocate()} className="mx-1 text-primary hover:underline">
+            让系统自动定位
+          </button>
+          或点右上角齿轮手动设定。
         </p>
       ) : null}
 

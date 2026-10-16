@@ -2,6 +2,7 @@
 import { db } from '../db'
 import type { Course, TimetableMeta, WeekAnchor } from '../types'
 import { parseTimetable } from './parser'
+import { inferWeek } from './infer'
 
 export const WEEK_LABELS_CN = ['一', '二', '三', '四', '五', '六', '日']
 
@@ -44,8 +45,16 @@ export async function importTimetableFile(file: File): Promise<TimetableMeta> {
   const warnings = [...parsed.warnings]
 
   let semesterStart = prev?.semesterStart
+  let weekAuto = prev?.weekAuto
+
   if (parsed.sourceFormat === 'ics' && parsed.semesterStart) {
     semesterStart = parsed.semesterStart
+    weekAuto = {
+      source: 'calendar',
+      confidence: 'high',
+      note: '日历课表按课程日期自动推算',
+      at: Date.now(),
+    }
     // 锚点改成与新学期起始同一套编号
     const anchor = await loadWeekAnchor()
     if (anchor) {
@@ -61,11 +70,31 @@ export async function importTimetableFile(file: File): Promise<TimetableMeta> {
         `日历课表按日期自动推算周次，学期起始周（周一）取 ${semesterStart}。如与你的学校不一致，可在课表设置里调整周次锚点。`
       )
     }
+  } else if (!semesterStart) {
+    // 表格类课表不含绝对日期 → 尝试自动定位「当前是第几周」
+    const inf = inferWeek(parsed.courses, parsed.semester, todayKey())
+    if (inf) {
+      semesterStart = inf.semesterStart
+      weekAuto = {
+        source: inf.source,
+        confidence: inf.confidence,
+        note: inf.note,
+        at: Date.now(),
+      }
+      // 只在用户还没手动设过锚点时写入，避免覆盖用户已经校准好的周次
+      const anchor = await loadWeekAnchor()
+      if (!anchor) await saveWeekAnchor(inf.week, todayKey())
+    } else {
+      warnings.push(
+        '未能从该文件判断当前是第几周（课表里没有日期或学期信息）。请在课表设置里设定「今天是第几周」，之后会每自然周自动 +1。'
+      )
+    }
   }
 
   const next: TimetableMeta = {
     ...parsed,
     semesterStart,
+    weekAuto,
     warnings,
   }
   await saveTimetable(next)
@@ -89,14 +118,17 @@ export {
   mondayKeyOf,
   weeksBetween,
   formatMonthDay,
+  weekFromSemesterStart,
 } from './dates'
 
 import {
   dateKeyOf,
   mondayKeyOf,
   parseDateKey,
+  todayKey,
   weeksBetween,
   weekdayOfDateKey,
+  weekFromSemesterStart,
 } from './dates'
 
 /* ---------------------------- 周次计算 ---------------------------- */
@@ -110,13 +142,6 @@ export function weekFromAnchor(anchor: WeekAnchor | null, dateKey: string): numb
   if (!anchor || !anchor.week) return null
   const delta = weeksBetween(anchor.onDate, dateKey)
   const week = anchor.week + delta
-  return week >= 1 && week <= 60 ? week : null
-}
-
-/** 依据「开学第一周周一」推算给定日期属于第几周；无效返回 null */
-export function weekFromSemesterStart(startKey: string, dateKey: string): number | null {
-  if (!startKey) return null
-  const week = weeksBetween(startKey, dateKey) + 1
   return week >= 1 && week <= 60 ? week : null
 }
 

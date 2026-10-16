@@ -23,6 +23,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     | (ConfirmOptions & { resolve: (v: boolean) => void })
     | null
   >(null)
+  const [guideOpen, setGuideOpen] = useState(false)
 
   useEffect(() => {
     let alive = true
@@ -40,9 +41,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
       const s = await getSettings()
       const row = await db.settings.get('activeAIConfigId')
+      const guideRow = await db.settings.get('onboardingDone')
       if (!alive) return
       setSettings(s)
       setActiveId((row?.value as string) ?? null)
+      // 首次使用（未看过引导）自动弹出新手指引
+      setGuideOpen(!guideRow?.value)
       setReady(true)
     })()
     const mq = window.matchMedia?.('(prefers-color-scheme: dark)')
@@ -107,6 +111,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
     await db.settings.put({ key: 'activeAIConfigId', value: id })
   }, [])
 
+  const openGuide = useCallback(() => setGuideOpen(true), [])
+  const closeGuide = useCallback(() => {
+    setGuideOpen(false)
+    // 看过就不再自动弹出（仍可从侧栏/设置重新打开）
+    void db.settings.put({ key: 'onboardingDone', value: true })
+  }, [])
+
   const value = useMemo(
     () => ({
       ready,
@@ -127,6 +138,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setActiveConfigId,
       focusDate,
       setFocusDate,
+      guideOpen,
+      openGuide,
+      closeGuide,
     }),
     [
       ready,
@@ -142,6 +156,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       activeConfigId,
       setActiveConfigId,
       focusDate,
+      guideOpen,
+      openGuide,
+      closeGuide,
     ]
   )
 

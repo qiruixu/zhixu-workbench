@@ -96,7 +96,7 @@ export default function AIConfigPage() {
             配置只保存在本机，密钥不会上传到任何第三方服务器。
           </p>
         </div>
-        <Button variant="primary" onClick={openNew}>
+        <Button variant="primary" onClick={openNew} data-guide="ai-add">
           <Plus size={15} /> 添加配置
         </Button>
       </div>
@@ -117,7 +117,7 @@ export default function AIConfigPage() {
           title="还没有任何 AI 配置"
           description="添加一个服务商并填入你自己的 API Key，即可开始对话。工作台的导航功能不依赖 AI，可独立使用。"
           action={
-            <Button variant="primary" onClick={openNew}>
+            <Button variant="primary" onClick={openNew} data-guide="ai-add">
               <Plus size={15} /> 添加第一个配置
             </Button>
           }

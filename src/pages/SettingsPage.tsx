@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import {
+  Compass,
   Database,
   Download,
   FileJson,
@@ -25,7 +26,7 @@ import { LayoutPanel } from '../components/LayoutPanel'
 import { Badge, Button, Field, Modal, Select, Switch } from '../components/ui'
 
 export default function SettingsPage() {
-  const { settings, setTheme, updateLayout, toast, confirm, setActiveConfigId } = useApp()
+  const { settings, setTheme, updateLayout, toast, confirm, setActiveConfigId, openGuide } = useApp()
   const counts = useLiveQuery(async () => {
     const [sites, cats, convs, msgs, cfgs] = await Promise.all([
       db.sites.count(),
@@ -252,6 +253,14 @@ export default function SettingsPage() {
             智序工作台 · 个性化网站导航 + 多模型 AI 助手。纯本地运行，数据存于浏览器 IndexedDB；
             通过本机 Node 代理转发 AI 请求。本应用不提供任何统一的 AI 服务、代付或额度。
           </p>
+          <div className="mt-3 border-t border-border pt-3">
+            <Button variant="outline" size="sm" onClick={openGuide}>
+              <Compass size={14} /> 重新查看新手指引
+            </Button>
+            <span className="ml-2 text-[12px] text-faint">
+              带你过一遍课表导入与 AI 配置（约 1 分钟）
+            </span>
+          </div>
         </section>
       </div>
 

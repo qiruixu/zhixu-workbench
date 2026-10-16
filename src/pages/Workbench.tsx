@@ -498,7 +498,7 @@ export default function Workbench() {
           onDragStart={onDragStart}
           onDragEnd={onDragEnd}
         >
-          <div className="space-y-6">
+          <div className="space-y-6" data-guide="site-grid">
             {dragDisabled ? (
               <p className="text-[12px] text-faint">搜索状态下已暂停拖拽排序，清空搜索后可继续拖动。</p>
             ) : null}
