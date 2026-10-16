@@ -47,10 +47,19 @@ export function LayoutPanel({
         <Toggle k="showQuickFilter" label="快捷筛选" desc="全部 / 收藏 / 置顶" />
         <Toggle k="groupByCategory" label="按分类分组" desc="关闭则以平铺网格展示" />
 
-        <Toggle k="showDashboard" label="面板带（课程 + 日历 + 天气）" desc="在首页顶部区域显示快捷面板" />
+        <Toggle
+          k="showDashboard"
+          label="面板带"
+          desc="在首页顶部显示下面勾选的快捷面板，可按需增减"
+        />
         <Toggle k="showTodayCourses" label="今日课程" desc="拖入教务系统导出的课表文件即可启用" />
-        <Toggle k="showMemoCalendar" label="日程备忘日历" desc="按日期记录要做的事" />
-        <Toggle k="showWeather" label="天气" desc="需授权定位或手动选择城市" />
+        <Toggle
+          k="showTodos"
+          label="待办"
+          desc="有截止日期、需要提前留意的事（如作业）——会一直挂着直到完成"
+        />
+        <Toggle k="showMemoCalendar" label="日程日历" desc="绑定在某一天、只有那天重要的事" />
+        <Toggle k="showWeather" label="天气" desc="可选模块；需授权定位或手动选择城市" />
 
         <div className="grid grid-cols-2 gap-3 py-3">
           <Field label="卡片大小">

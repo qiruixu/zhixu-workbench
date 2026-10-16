@@ -9,6 +9,7 @@ import type {
   MemoNote,
   Site,
   TimetableMeta,
+  Todo,
 } from './types'
 
 export class AppDB extends Dexie {
@@ -20,6 +21,7 @@ export class AppDB extends Dexie {
   settings!: Table<{ key: string; value: unknown }, string>
   timetable!: Table<TimetableMeta, string>
   memos!: Table<MemoNote, string>
+  todos!: Table<Todo, string>
 
   constructor() {
     super('zhixu-workbench')
@@ -42,6 +44,18 @@ export class AppDB extends Dexie {
       timetable: 'id',
       memos: 'id, date, done, createdAt',
     })
+    // v3：新增待办（有截止日期、跨天关注，区别于按天的日程）
+    this.version(3).stores({
+      categories: 'id, order',
+      sites: 'id, categoryId, order, favorite, pinned',
+      aiConfigs: 'id, providerId, createdAt',
+      conversations: 'id, updatedAt, kind',
+      messages: 'id, conversationId, createdAt',
+      settings: 'key',
+      timetable: 'id',
+      memos: 'id, date, done, createdAt',
+      todos: 'id, due, done, createdAt',
+    })
   }
 }
 
@@ -58,6 +72,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
     showStats: true,
     showDashboard: true,
     showTodayCourses: true,
+    showTodos: true,
     showMemoCalendar: true,
     showWeather: true,
     cardSize: 'md',
@@ -192,6 +207,7 @@ export async function wipeAll(): Promise<void> {
       db.settings,
       db.timetable,
       db.memos,
+      db.todos,
     ],
     async () => {
       await Promise.all([
@@ -203,6 +219,7 @@ export async function wipeAll(): Promise<void> {
         db.settings.clear(),
         db.timetable.clear(),
         db.memos.clear(),
+        db.todos.clear(),
       ])
     }
   )

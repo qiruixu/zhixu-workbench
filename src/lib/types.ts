@@ -37,9 +37,11 @@ export interface LayoutSettings {
   showSearch: boolean
   showQuickFilter: boolean
   showStats: boolean
-  /** 面板带：今日课程 + 日历备忘 + 天气 */
+  /** 面板带：今日课程 + 待办 + 日历备忘 + 天气 */
   showDashboard: boolean
   showTodayCourses: boolean
+  /** 待办清单（有截止日期，需要提前关注） */
+  showTodos: boolean
   showMemoCalendar: boolean
   showWeather: boolean
   cardSize: 'sm' | 'md' | 'lg'
@@ -268,7 +270,7 @@ export interface TimetableMeta {
   rawRows: string[][]
 }
 
-/** 日程备忘 */
+/** 日程备忘（按天：某一天要做/要发生的事） */
 export interface MemoNote {
   id: string
   /** YYYY-MM-DD */
@@ -279,4 +281,22 @@ export interface MemoNote {
   color?: string
   createdAt: number
   updatedAt: number
+}
+
+/**
+ * 待办（跨天：有截止日期、在截止前都需要留意的任务，如作业、报名）
+ *
+ * 与「日程」的区别：日程只在某一天重要；待办是「一直挂在那儿」直到完成或过期，
+ * 因此单独列表面板、按截止日期排序、逾期高亮。
+ */
+export interface Todo {
+  id: string
+  text: string
+  /** 截止日期 YYYY-MM-DD；不填表示「随时」 */
+  due?: string
+  done: boolean
+  createdAt: number
+  updatedAt: number
+  /** 完成时间，用于已完成列表的排序 */
+  doneAt?: number
 }

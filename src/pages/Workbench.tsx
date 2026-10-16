@@ -51,6 +51,7 @@ import { CategoryManagerModal } from '../components/CategoryManagerModal'
 import { LayoutPanel, gridClass } from '../components/LayoutPanel'
 import { MemoCalendar } from '../components/MemoCalendar'
 import { TodayCourses } from '../components/TodayCourses'
+import { TodoBoard } from '../components/TodoBoard'
 import { WeatherCard } from '../components/WeatherCard'
 import { Button, EmptyState, IconButton } from '../components/ui'
 
@@ -339,10 +340,11 @@ export default function Workbench() {
         </div>
       ) : null}
 
-      {/* 面板带：今日课程 + 日历备忘 + 天气 */}
+      {/* 面板带：今日课程 + 待办 + 日历备忘 + 天气（各自可在「布局」里增减） */}
       {(() => {
         const panels = [
           L.showTodayCourses ? <TodayCourses key="courses" /> : null,
+          L.showTodos ? <TodoBoard key="todos" /> : null,
           L.showMemoCalendar ? <MemoCalendar key="memo" /> : null,
           L.showWeather ? <WeatherCard key="weather" /> : null,
         ].filter(Boolean) as React.ReactNode[]
@@ -352,14 +354,20 @@ export default function Workbench() {
             ? 'grid-cols-1'
             : panels.length === 2
               ? 'lg:grid-cols-2'
-              : 'lg:grid-cols-2 xl:grid-cols-[1.35fr_1fr_0.95fr]'
+              : panels.length === 3
+                ? 'lg:grid-cols-2 xl:grid-cols-3'
+                : 'lg:grid-cols-2 xl:grid-cols-4'
         return (
           <div className={cn('mb-5 grid gap-4', gridCls)}>
             {panels.map((node, i) => (
               <div
                 key={i}
                 className={cn(
-                  panels.length === 3 && i === 2 && 'lg:col-span-2 xl:col-span-1'
+                  // 奇数个面板时，最后一个在中等屏幕下占满一行，避免留下半格空位
+                  panels.length % 2 === 1 &&
+                    panels.length > 1 &&
+                    i === panels.length - 1 &&
+                    'lg:col-span-2 xl:col-span-1'
                 )}
               >
                 {node}

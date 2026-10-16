@@ -9,6 +9,7 @@
  */
 import { db } from '../db'
 import { toDateKey } from '../memoRepo'
+import { daysUntilDue, listTodos } from '../todoRepo'
 import {
   coursesOnDate,
   loadTimetable,
@@ -186,6 +187,32 @@ export async function buildAIContext(opts: AIContextOptions): Promise<AIContextR
         ].join('\n')
       )
       sections.push('日程备忘')
+    }
+  }
+
+  // 待办（有截止日期、跨天关注——与「日程」是两回事，单列一块）
+  if (opts.includeMemos) {
+    const today = toDateKey(now)
+    const pending = (await listTodos()).filter((t) => !t.done)
+    if (pending.length > 0) {
+      blocks.push(
+        [
+          '【我的待办】未完成，按截止日期排序（这类事在截止前都需要留意，不只是当天）',
+          ...pending.slice(0, 30).map((t) => {
+            const d = daysUntilDue(t.due, today)
+            const when =
+              d == null
+                ? '未设截止日期'
+                : d < 0
+                  ? `截止 ${t.due}，已逾期 ${-d} 天`
+                  : d === 0
+                    ? `今天截止（${t.due}）`
+                    : `截止 ${t.due}（还有 ${d} 天）`
+            return `- ${t.text}：${when}`
+          }),
+        ].join('\n')
+      )
+      sections.push('待办')
     }
   }
 

@@ -275,7 +275,7 @@ export function OnboardingGuide({ onClose }: { onClose: () => void }) {
       {/* 遮罩 / 聚光灯 */}
       {rect ? (
         <div
-          className="pointer-events-none absolute rounded-xl transition-[top,left,width,height] duration-300"
+          className="pointer-events-none absolute rounded-xl transition-[top,left,width,height] duration-[450ms] ease-out"
           style={{
             top: rect.top - 6,
             left: rect.left - 6,
@@ -288,10 +288,12 @@ export function OnboardingGuide({ onClose }: { onClose: () => void }) {
         <div className="absolute inset-0 bg-black/60" />
       )}
 
-      {/* 步骤卡片 */}
+      {/* 步骤卡片
+          位置过渡必须与聚光灯用同一时长/缓动：否则聚光灯平滑移动、卡片瞬移，
+          视觉上会「对不上、很生硬」。 */}
       <div className="absolute z-10" style={posStyle}>
         <div
-          className="overflow-y-auto rounded-2xl border border-border bg-surface shadow-[var(--shadow-lg)] animate-in-up"
+          className="overflow-y-auto rounded-2xl border border-border bg-surface shadow-[var(--shadow-lg)] animate-in-up transition-[top,left,bottom] duration-[450ms] ease-out"
           style={cardStyle}
         >
         <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
