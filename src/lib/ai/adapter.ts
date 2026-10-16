@@ -54,6 +54,14 @@ export function buildChatBody(cfg: AIConfig, messages: ChatMessage[], stream: bo
 /** 经本地代理发送（解决跨域 + 隔离密钥） */
 export const PROXY_ENDPOINT = '/api/ai/request'
 
+/**
+ * 直连模式（部署版专用）。
+ * 用 `VITE_DIRECT=1` 构建时启用：跳过本地代理，由浏览器直接请求用户自己配置的服务商地址。
+ * 适用前提：服务商支持浏览器跨域（CORS），例如 NVIDIA NIM、OpenAI、OpenRouter、Together 等。
+ * BYOK 的 Key 本就只存在于用户浏览器，直连不会使密钥流向任何第三方。
+ */
+export const IS_DIRECT = import.meta.env.VITE_DIRECT === true || import.meta.env.VITE_DIRECT === '1'
+
 export interface ProxyRequest {
   url: string
   method?: string
@@ -62,6 +70,22 @@ export interface ProxyRequest {
 }
 
 export function proxyFetch(payload: ProxyRequest, signal?: AbortSignal): Promise<Response> {
+  // 直连模式：直接打服务商地址（与本地代理行为一致，上层已负责解析 SSE/JSON）
+  if (IS_DIRECT) {
+    const headers: Record<string, string> = { ...(payload.headers || {}) }
+    if (!Object.keys(headers).some((k) => k.toLowerCase() === 'content-type')) {
+      headers['Content-Type'] = 'application/json'
+    }
+    const method = (payload.method ?? 'POST').toUpperCase()
+    const body =
+      payload.body === undefined || payload.body === null || method === 'GET' || method === 'HEAD'
+        ? undefined
+        : typeof payload.body === 'string'
+          ? payload.body
+          : JSON.stringify(payload.body)
+    return fetch(payload.url, { method, headers, body, signal })
+  }
+
   return fetch(PROXY_ENDPOINT, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

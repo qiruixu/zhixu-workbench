@@ -15,6 +15,30 @@ import {
   Sun,
 } from 'lucide-react'
 import { db } from './db'
+import { IS_DIRECT } from './ai/adapter'
+
+/** 部署版直连第三方时复用：去掉行政后缀，与后端保持一致 */
+function stripAdminSuffix(s: unknown): string {
+  return String(s || '')
+    .replace(/[市省州地区县镇乡村]$/u, '')
+    .trim()
+}
+
+/** 直连第三方数据源（部署版）：直接 fetch 并解析 JSON，错误抛中文提示 */
+async function directJson(url: string, fallbackMsg: string): Promise<Record<string, unknown>> {
+  let res: Response
+  try {
+    res = await fetch(url, { headers: { Accept: 'application/json' } })
+  } catch {
+    throw new Error(`${fallbackMsg}：网络请求失败（可能是服务商不支持浏览器跨域）`)
+  }
+  const text = await res.text()
+  try {
+    return JSON.parse(text) as Record<string, unknown>
+  } catch {
+    throw new Error(`${fallbackMsg}：未返回有效的 JSON 数据`)
+  }
+}
 
 export interface GeoPlace {
   name: string
@@ -126,12 +150,57 @@ async function getJson(url: string, fallbackMsg: string): Promise<Record<string,
 }
 
 export async function searchCity(q: string): Promise<GeoPlace[]> {
+  if (IS_DIRECT) {
+    const run = async (term: string) => {
+      const d = await directJson(
+        `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(term)}&count=8&language=zh&format=json`,
+        '城市搜索失败'
+      )
+      return (d.results as Array<Record<string, unknown>>) || []
+    }
+    let results = await run(q)
+    if (!results.length && q.length > 1) {
+      const stripped = q.replace(/[市省州地区县]$/u, '')
+      if (stripped && stripped !== q) results = await run(stripped)
+    }
+    return results.map((r) => {
+      const city = stripAdminSuffix(r.admin2)
+      const district = stripAdminSuffix(r.name)
+      const isCityLevel = !city || city === district
+      return {
+        name: district,
+        region: isCityLevel ? stripAdminSuffix(r.admin1) : `${stripAdminSuffix(r.admin1)}·${city}`,
+        country: String(r.country || ''),
+        lat: Number(r.latitude),
+        lon: Number(r.longitude),
+        district: !isCityLevel,
+      } as GeoPlace
+    })
+  }
+
   const data = await getJson(`/api/geo/search?q=${encodeURIComponent(q)}`, '城市搜索失败')
   if (!data.ok) throw new Error(String(data.error || '城市搜索失败'))
   return data.results as GeoPlace[]
 }
 
 export async function reverseGeo(lat: number, lon: number): Promise<GeoPlace> {
+  if (IS_DIRECT) {
+    const d = await directJson(
+      `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=zh-Hans`,
+      '反查城市失败'
+    )
+    const district = stripAdminSuffix(d.locality)
+    const city = stripAdminSuffix(d.city)
+    return {
+      name: district || city || stripAdminSuffix(d.principalSubdivision),
+      region: city || stripAdminSuffix(d.principalSubdivision),
+      country: String(d.countryName || ''),
+      lat,
+      lon,
+      district: Boolean(district),
+    }
+  }
+
   const data = await getJson(`/api/geo/reverse?lat=${lat}&lon=${lon}`, '反查城市失败')
   return {
     name: String(data.name || `${lat.toFixed(2)}, ${lon.toFixed(2)}`),
@@ -144,6 +213,47 @@ export async function reverseGeo(lat: number, lon: number): Promise<GeoPlace> {
 }
 
 export async function fetchWeather(lat: number, lon: number): Promise<WeatherData> {
+  if (IS_DIRECT) {
+    const url =
+      `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}` +
+      `&current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,weather_code,wind_speed_10m` +
+      `&hourly=temperature_2m,weather_code,precipitation_probability` +
+      `&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max` +
+      `&timezone=auto&forecast_days=7`
+    const d = await directJson(url, '天气获取失败') as {
+      timezone?: string
+      current?: Record<string, unknown>
+      hourly?: Record<string, unknown>
+      daily?: Record<string, unknown>
+    }
+    return {
+      timezone: String(d.timezone || ''),
+      current: {
+        time: d.current?.time as string | undefined,
+        temp: d.current?.temperature_2m as number | undefined,
+        feelsLike: d.current?.apparent_temperature as number | undefined,
+        humidity: d.current?.relative_humidity_2m as number | undefined,
+        precipitation: d.current?.precipitation as number | undefined,
+        windSpeed: d.current?.wind_speed_10m as number | undefined,
+        isDay: d.current?.is_day === 1,
+        code: d.current?.weather_code as number | undefined,
+      },
+      hourly: {
+        time: (d.hourly?.time as string[]) ?? [],
+        temp: (d.hourly?.temperature_2m as number[]) ?? [],
+        code: (d.hourly?.weather_code as number[]) ?? [],
+        pop: (d.hourly?.precipitation_probability as number[]) ?? [],
+      },
+      daily: {
+        time: (d.daily?.time as string[]) ?? [],
+        code: (d.daily?.weather_code as number[]) ?? [],
+        max: (d.daily?.temperature_2m_max as number[]) ?? [],
+        min: (d.daily?.temperature_2m_min as number[]) ?? [],
+        pop: (d.daily?.precipitation_probability_max as number[]) ?? [],
+      },
+    }
+  }
+
   const data = await getJson(`/api/weather?lat=${lat}&lon=${lon}`, '天气获取失败')
   if (!data.ok) throw new Error(String(data.error || '天气获取失败'))
   return data as unknown as WeatherData

@@ -9,6 +9,7 @@
     "dev:web": "vite",
     "dev:api": "node server/index.mjs",
     "build": "vite build",
+    "build:web": "VITE_DIRECT=1 vite build --base=./ --outDir dist-web",
     "start": "node server/index.mjs",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
