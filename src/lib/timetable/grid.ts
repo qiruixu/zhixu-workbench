@@ -371,14 +371,43 @@ function parseCompactCell(
 const DETAIL_NOISE_RE =
   /\/\s*(?:教学班|考核方式|课程学时|总学时|周学时|学分|选课备注|上课备注|考试方式|教室容量|课程性质|开课学院)\s*[:：]?/
 
-/** 这一行像「任课教师」吗？用于避免把名称折行、★ 标记误当成教师 */
+/** 单个中文姓名（含复姓 / 少数民族名字里的间隔号），2-5 字 */
+const CN_NAME_RE = /^[\u4e00-\u9fa5][\u4e00-\u9fa5·]{1,6}$/
+/** 外教姓名，如 John Smith / J. Smith */
+const EN_NAME_RE = /^[A-Za-z][A-Za-z.'\-\s]{1,24}$/
+/**
+ * 「周次 / 节次」的**精确**形式。
+ * ⚠️ 不能直接用「周」「节」单字判据——姓周的老师（周安平、周娴）会被误杀，
+ * 表现为教师字段为空、名字串被塞进附注（进而挤掉课程名）。
+ */
+const SCHED_TOKEN_RE = /\d\s*[-~—~至]?\s*\d*\s*(?:周|节)|第\s*\d+\s*节/
+
+/**
+ * 这一行像「任课教师」吗？用于避免把名称折行、★ 标记误当成教师。
+ * 支持多教师列表（逗号/顿号分隔，可达 10+ 人，如合上的大课）。
+ */
 function looksLikeTeacher(s: string): boolean {
-  const t = s.trim()
-  if (!t || t.length > 24) return false
-  if (/[★☆○●◎△▲※]/.test(t)) return false // 标记符号 → 不是教师
-  if (/^\d/.test(t)) return false // 以数字开头（如「1★」）→ 不是教师
-  if (/[节周场地教室楼\/|]/.test(t)) return false // 含地点/节次字眼
-  return /[一-龥A-Za-z]/.test(t)
+  const raw = s.trim()
+  if (!raw || raw.length > 80) return false
+  if (/[★☆○●◎△▲※]/.test(raw)) return false // 标记符号 → 不是教师
+  if (/^\d/.test(raw)) return false // 以数字开头（如「1★」）→ 不是教师
+  if (SCHED_TOKEN_RE.test(raw)) return false // 含周次/节次数字
+  if (/[楼馆室场区园廊\/|]/.test(raw)) return false // 含地点字眼
+  // 兼容「张三(教授)」「李四 副教授」这类带职称的写法，先剥掉再判断
+  const t = raw
+    .replace(/[（(][^）)]*[）)]/g, ' ')
+    .replace(/(?:教授|副教授|讲师|助教|研究员|老师|博士)\s*$/, ' ')
+    .trim()
+  if (!t) return false
+  const names = t
+    // PDF 抽取常把多教师用空格分隔，故空格也当分隔符（外教 "John Smith" 会拆成两名，仍判为教师）
+    .split(/[,，、;；/\s]+/)
+    .map((x) => x.trim())
+    .filter(Boolean)
+  if (names.length > 1) {
+    return names.length <= 20 && names.every((n) => CN_NAME_RE.test(n) || EN_NAME_RE.test(n))
+  }
+  return CN_NAME_RE.test(t) || EN_NAME_RE.test(t)
 }
 
 function parseCourseBlock(

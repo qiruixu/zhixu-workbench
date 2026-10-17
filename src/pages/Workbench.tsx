@@ -356,13 +356,20 @@ export default function Workbench() {
               ? 'lg:grid-cols-2'
               : panels.length === 3
                 ? 'lg:grid-cols-2 xl:grid-cols-3'
-                : 'lg:grid-cols-2 xl:grid-cols-4'
+                : // 四块面板：1280~1536 之间排 4 栏每栏只有 ~260px，课程名/教师会被挤爆，
+                  // 放到 2xl 才四栏；中等屏幕两栏更舒展
+                  'lg:grid-cols-2 2xl:grid-cols-4'
         return (
           <div className={cn('mb-5 grid gap-4', gridCls)}>
             {panels.map((node, i) => (
               <div
                 key={i}
                 className={cn(
+                  // min-w-0：grid item 默认 min-width:auto，长文本（教师列表、备注）
+                  // 会把列撑得比可用宽度更宽，表现为内容溢出面板。
+                  // max-h：不加限制时 grid 行高会跟着内容一起长，面板内的 overflow 永远不触发，
+                  // 备注一多就把内容顶到卡片外（被 h-full + overflow-hidden 裁掉）。
+                  'min-w-0 lg:max-h-[min(480px,68vh)]',
                   // 奇数个面板时，最后一个在中等屏幕下占满一行，避免留下半格空位
                   panels.length % 2 === 1 &&
                     panels.length > 1 &&

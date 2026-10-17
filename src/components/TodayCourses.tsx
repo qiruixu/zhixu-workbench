@@ -198,7 +198,7 @@ export function TodayCourses() {
       {...dropProps}
       data-dropzone="timetable"
       className={cn(
-        'relative flex h-full flex-col rounded-2xl border bg-surface p-4 transition-colors',
+        'relative flex h-full min-w-0 flex-col overflow-hidden rounded-2xl border bg-surface p-4 transition-colors',
         dragging ? 'border-primary ring-2 ring-primary/25' : 'border-border'
       )}
     >
@@ -213,19 +213,23 @@ export function TodayCourses() {
       <div className="mb-2.5 flex items-center justify-between gap-2">
         <div className="flex min-w-0 items-center gap-2">
           <GraduationCap size={16} className="shrink-0 text-primary" />
-          <span className="text-[14px] font-semibold text-text">课程表</span>
+          <span className="shrink-0 whitespace-nowrap text-[14px] font-semibold text-text">
+            课程表
+          </span>
           {meta?.courses.length ? (
-            <span className="truncate text-[11.5px] text-faint">{meta.courses.length} 门课</span>
+            <span className="min-w-0 truncate whitespace-nowrap text-[11.5px] text-faint">
+              {meta.courses.length} 门课
+            </span>
           ) : null}
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex shrink-0 items-center gap-1">
           {meta ? (
             <>
               <div className="flex items-center gap-0.5 rounded-lg border border-border bg-surface-2 px-0.5">
                 <IconButton title="上一周" onClick={() => setFocusDate(shiftDay(focusDate, -7))}>
                   <ChevronLeft size={14} />
                 </IconButton>
-                <span className="min-w-[46px] text-center text-[11.5px] font-medium text-text">
+                <span className="min-w-[46px] whitespace-nowrap text-center text-[11.5px] font-medium text-text">
                   {week == null ? '未设周次' : `第 ${week} 周`}
                 </span>
                 <IconButton title="下一周" onClick={() => setFocusDate(shiftDay(focusDate, 7))}>
@@ -410,9 +414,9 @@ export function TodayCourses() {
           )}
         </div>
       ) : (
-        <div className="flex-1 space-y-2">
+        <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto">
           {dayList.length === 0 ? (
-            <div className="flex h-full min-h-[120px] flex-col items-center justify-center rounded-xl border border-dashed border-border px-4 py-6 text-center">
+            <div className="flex min-h-[100px] flex-1 flex-col items-center justify-center rounded-xl border border-dashed border-border px-4 py-6 text-center">
               <CalendarRange size={22} className="text-faint" />
               <p className="mt-2 text-[13px] text-muted">
                 {isToday ? '今天没有课' : '这天没有课'}
@@ -442,13 +446,15 @@ export function TodayCourses() {
           )}
 
           {meta.remarks.length ? (
-            <details className="mt-1">
+            <details className="mt-1 shrink-0">
               <summary className="cursor-pointer text-[12px] text-faint hover:text-muted">
                 其它安排（{meta.remarks.length}）
               </summary>
               <ul className="mt-1.5 space-y-1 text-[11.5px] leading-relaxed text-muted">
                 {meta.remarks.map((r, i) => (
-                  <li key={i}>· {r}</li>
+                  <li key={i} className="min-w-0 [overflow-wrap:anywhere]">
+                    · {r}
+                  </li>
                 ))}
               </ul>
             </details>
@@ -485,35 +491,62 @@ export function TodayCourses() {
   )
 }
 
+/**
+ * 教师列表在窄面板里放不下（一节大课可能有 10+ 位老师）。
+ * 超过 2 位就折叠成「张三、李四 等 11 人」，完整名单放 title，hover 可见。
+ */
+function teacherLabel(teacher: string): string {
+  const list = teacher
+    .split(/[,，、;；/]/)
+    .map((s) => s.trim())
+    .filter(Boolean)
+  if (list.length <= 2) return list.join('、') || teacher
+  return `${list.slice(0, 2).join('、')} 等 ${list.length} 人`
+}
+
 function CourseRow({ course, muted, unknown }: { course: Course; muted?: boolean; unknown?: boolean }) {
   return (
     <div
       className={cn(
-        'rounded-xl border border-border bg-surface-2 px-3 py-2.5 transition-colors',
+        'min-w-0 rounded-xl border border-border bg-surface-2 px-3 py-2.5 transition-colors',
         !muted && 'hover:border-primary/40'
       )}
     >
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-1.5">
-            <span className="truncate text-[13.5px] font-semibold text-text">{course.name}</span>
+          <div className="flex min-w-0 items-start gap-1.5">
+            <span
+              className="line-clamp-2 min-w-0 flex-1 text-[13.5px] font-semibold leading-snug text-text"
+              title={course.name}
+            >
+              {course.name}
+            </span>
             {course.note ? (
-              <span className="shrink-0 text-[11px] text-faint">{course.note}</span>
+              <span
+                className="max-w-[40%] shrink-0 truncate text-[11px] text-faint"
+                title={course.note}
+              >
+                {course.note}
+              </span>
             ) : null}
           </div>
           <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11.5px] text-muted">
             {course.location ? (
-              <span className="flex items-center gap-1">
-                <MapPin size={11} /> {course.location}
+              <span className="flex min-w-0 items-center gap-1" title={course.location}>
+                <MapPin size={11} className="shrink-0" />
+                <span className="min-w-0 [overflow-wrap:anywhere]">{course.location}</span>
               </span>
             ) : null}
             {course.teacher ? (
-              <span className="flex items-center gap-1">
-                <UserIcon size={11} /> {course.teacher}
+              <span className="flex min-w-0 items-center gap-1" title={course.teacher}>
+                <UserIcon size={11} className="shrink-0" />
+                <span className="min-w-0 [overflow-wrap:anywhere]">
+                  {teacherLabel(course.teacher)}
+                </span>
               </span>
             ) : null}
-            {course.weeks ? <span>第 {course.weeks} 周</span> : null}
-            {unknown ? <span className="text-warning">周次未识别</span> : null}
+            {course.weeks ? <span className="shrink-0">第 {course.weeks} 周</span> : null}
+            {unknown ? <span className="shrink-0 text-warning">周次未识别</span> : null}
           </div>
         </div>
         {course.periodLabel ? (
@@ -523,7 +556,7 @@ function CourseRow({ course, muted, unknown }: { course: Course; muted?: boolean
         ) : null}
       </div>
       {course.section ? (
-        <div className="mt-1.5 text-[11px] text-faint">{course.section}</div>
+        <div className="mt-1.5 truncate text-[11px] text-faint">{course.section}</div>
       ) : null}
     </div>
   )
