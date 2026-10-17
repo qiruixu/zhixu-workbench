@@ -91,7 +91,7 @@ function SiteCard({
     opacity: isDragging ? 0.35 : 1,
   }
 
-  const pad = L.cardSize === 'sm' ? 'p-2.5' : L.cardSize === 'lg' ? 'p-4' : 'p-3'
+  const pad = L.cardSize === 'sm' ? 'p-2' : L.cardSize === 'lg' ? 'p-4' : 'p-2.5 sm:p-3'
   const iconSize = L.cardSize === 'sm' ? 28 : L.cardSize === 'lg' ? 40 : 34
 
   return (
@@ -106,13 +106,15 @@ function SiteCard({
     >
       <button
         onClick={() => onOpen(site)}
-        className="flex min-w-0 flex-1 items-center gap-2.5 text-left outline-none"
+        className="flex min-w-0 flex-1 items-center gap-2 text-left outline-none sm:gap-2.5"
         title={`在新标签页打开 ${site.url}`}
       >
         <SiteIcon url={site.url} iconUrl={site.iconUrl} title={site.title} size={iconSize} radius={9} />
         <span className="min-w-0 flex-1">
-          <span className="flex items-center gap-1">
-            <span className="truncate text-[13.5px] font-medium leading-5 text-text">{site.title}</span>
+          <span className="flex items-start gap-1">
+            <span className="line-clamp-2 min-w-0 flex-1 text-[13px] font-medium leading-snug text-text sm:text-[13.5px]">
+              {site.title}
+            </span>
             {site.pinned ? <Pin size={11} className="shrink-0 text-primary" /> : null}
           </span>
           {L.cardSize !== 'sm' ? (
@@ -137,24 +139,28 @@ function SiteCard({
         </button>
         <IconButton
           title={site.favorite ? '取消收藏' : '收藏'}
-          className="h-7 w-7"
+          className="h-6 w-6 sm:h-7 sm:w-7"
           onClick={() => void toggleFavorite(site.id)}
         >
           <Star size={13} className={cn(site.favorite && 'fill-warning text-warning')} />
         </IconButton>
         <IconButton
           title={site.pinned ? '取消置顶' : '置顶'}
-          className="h-7 w-7"
+          className="hidden! h-7 w-7 sm:flex!"
           onClick={() => void togglePinned(site.id)}
         >
           {site.pinned ? <PinOff size={13} /> : <Pin size={13} />}
         </IconButton>
-        <IconButton title="编辑" className="h-7 w-7" onClick={() => onEdit(site)}>
+        <IconButton
+          title="编辑"
+          className="h-6 w-6 sm:h-7 sm:w-7"
+          onClick={() => onEdit(site)}
+        >
           <Pencil size={13} />
         </IconButton>
         <IconButton
           title="删除"
-          className="h-7 w-7 hover:text-danger"
+          className="hidden! h-7 w-7 hover:text-danger sm:flex!"
           onClick={() => onDelete(site)}
         >
           <Trash2 size={13} />
@@ -234,6 +240,24 @@ export default function Workbench() {
     [sites, categories]
   )
 
+  /**
+   * 手机端面板带改成「标签切换」：四个面板纵向堆叠时首屏只看得见一个，
+   * 网站（真正的核心）要滚两三屏才出现。切成标签后垂直只占一个面板的高度。
+   * 桌面端仍是网格，不受影响。
+   */
+  const panelDefs = useMemo(
+    () =>
+      [
+        { key: 'courses' as const, label: '课程表', on: L.showTodayCourses, node: <TodayCourses /> },
+        { key: 'todos' as const, label: '待办', on: L.showTodos, node: <TodoBoard /> },
+        { key: 'memo' as const, label: '日程', on: L.showMemoCalendar, node: <MemoCalendar /> },
+        { key: 'weather' as const, label: '天气', on: L.showWeather, node: <WeatherCard /> },
+      ].filter((p) => p.on),
+    [L.showTodayCourses, L.showTodos, L.showMemoCalendar, L.showWeather]
+  )
+  const [mobilePanel, setMobilePanel] = useState<string>('')
+  const activeMobile = panelDefs.find((p) => p.key === mobilePanel) ?? panelDefs[0]
+
   const openSite = (s: Site) => {
     window.open(s.url, '_blank', 'noopener,noreferrer')
     void bumpOpen(s.id)
@@ -298,41 +322,48 @@ export default function Workbench() {
   })()
 
   return (
-    <div className="mx-auto max-w-[1400px] px-4 py-5 md:px-7 md:py-7">
+    <div className="mx-auto max-w-[1400px] px-3 py-3 sm:px-4 sm:py-5 md:px-7 md:py-7">
       {/* Hero */}
       {L.showHero ? (
-        <div className="mb-5 overflow-hidden rounded-2xl border border-border bg-gradient-to-br from-[var(--bg-grad-1)] to-[var(--bg-grad-2)] p-5 md:p-7">
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div>
-              <h1 className="text-[22px] font-semibold tracking-tight text-text md:text-[26px]">
+        <div className="mb-3 overflow-hidden rounded-2xl border border-border bg-gradient-to-br from-[var(--bg-grad-1)] to-[var(--bg-grad-2)] p-3.5 sm:p-5 md:mb-5 md:p-7">
+          <div className="flex flex-wrap items-start justify-between gap-3 md:gap-4">
+            <div className="min-w-0">
+              <h1 className="text-[19px] font-semibold leading-tight tracking-tight text-text sm:text-[22px] md:text-[26px]">
                 {greeting}，这是你的工作台
               </h1>
-              <p className="mt-1.5 text-[13.5px] text-muted">
+              <p className="mt-1 line-clamp-2 text-[12.5px] text-muted sm:text-[13.5px] md:mt-1.5">
                 把常用网站集中到这里，拖拽即可整理；需要时让 AI 帮你归类。
               </p>
             </div>
-            <div className="flex items-center gap-2">
-              <Button variant="outline" onClick={() => setShowLayout(true)}>
+            <div className="flex w-full items-center gap-2 sm:w-auto">
+              <Button variant="outline" onClick={() => setShowLayout(true)} className="flex-1 sm:flex-none">
                 <Settings2 size={15} /> 布局
               </Button>
-              <Button variant="primary" onClick={() => onOpenEditor(null, null)}>
+              <Button variant="primary" onClick={() => onOpenEditor(null, null)} className="flex-1 sm:flex-none">
                 <Plus size={15} /> 添加网站
               </Button>
             </div>
           </div>
 
           {L.showStats ? (
-            <div className="mt-5 grid grid-cols-3 gap-3 sm:max-w-md">
+            <div className="mt-3 grid grid-cols-3 gap-2 md:mt-5 md:gap-3 sm:max-w-md">
               {[
                 { label: '网站', value: stats.sites, icon: LayoutDashboard },
                 { label: '分类', value: stats.categories, icon: FolderCog },
                 { label: '收藏', value: stats.favorites, icon: Star },
               ].map(({ label, value, icon: Icon }) => (
-                <div key={label} className="rounded-xl border border-border bg-surface/70 px-3.5 py-2.5">
-                  <div className="flex items-center gap-1.5 text-[12px] text-muted">
-                    <Icon size={13} /> {label}
+                <div
+                  key={label}
+                  className="flex items-center justify-between gap-1 rounded-xl border border-border bg-surface/70 px-2.5 py-1.5 md:block md:px-3.5 md:py-2.5"
+                >
+                  <div className="flex items-center gap-1 text-[11.5px] text-muted md:gap-1.5 md:text-[12px]">
+                    <Icon size={12} className="shrink-0 md:hidden" />
+                    <Icon size={13} className="hidden shrink-0 md:block" />
+                    <span className="truncate">{label}</span>
                   </div>
-                  <div className="mt-0.5 text-[19px] font-semibold tabular-nums text-text">{value}</div>
+                  <div className="text-[15px] font-semibold tabular-nums text-text md:mt-0.5 md:text-[19px]">
+                    {value}
+                  </div>
                 </div>
               ))}
             </div>
@@ -342,50 +373,70 @@ export default function Workbench() {
 
       {/* 面板带：今日课程 + 待办 + 日历备忘 + 天气（各自可在「布局」里增减） */}
       {(() => {
-        const panels = [
-          L.showTodayCourses ? <TodayCourses key="courses" /> : null,
-          L.showTodos ? <TodoBoard key="todos" /> : null,
-          L.showMemoCalendar ? <MemoCalendar key="memo" /> : null,
-          L.showWeather ? <WeatherCard key="weather" /> : null,
-        ].filter(Boolean) as React.ReactNode[]
-        if (!L.showDashboard || panels.length === 0) return null
+        if (!L.showDashboard || panelDefs.length === 0) return null
         const gridCls =
-          panels.length === 1
+          panelDefs.length === 1
             ? 'grid-cols-1'
-            : panels.length === 2
+            : panelDefs.length === 2
               ? 'lg:grid-cols-2'
-              : panels.length === 3
+              : panelDefs.length === 3
                 ? 'lg:grid-cols-2 xl:grid-cols-3'
                 : // 四块面板：1280~1536 之间排 4 栏每栏只有 ~260px，课程名/教师会被挤爆，
                   // 放到 2xl 才四栏；中等屏幕两栏更舒展
                   'lg:grid-cols-2 2xl:grid-cols-4'
         return (
-          <div className={cn('mb-5 grid gap-4', gridCls)}>
-            {panels.map((node, i) => (
-              <div
-                key={i}
-                className={cn(
-                  // min-w-0：grid item 默认 min-width:auto，长文本（教师列表、备注）
-                  // 会把列撑得比可用宽度更宽，表现为内容溢出面板。
-                  // max-h：不加限制时 grid 行高会跟着内容一起长，面板内的 overflow 永远不触发，
-                  // 备注一多就把内容顶到卡片外（被 h-full + overflow-hidden 裁掉）。
-                  'min-w-0 lg:max-h-[min(480px,68vh)]',
-                  // 奇数个面板时，最后一个在中等屏幕下占满一行，避免留下半格空位
-                  panels.length % 2 === 1 &&
-                    panels.length > 1 &&
-                    i === panels.length - 1 &&
-                    'lg:col-span-2 xl:col-span-1'
-                )}
-              >
-                {node}
-              </div>
-            ))}
-          </div>
+          <>
+            {/* 手机 / 竖屏平板：标签切换，只占一个面板的高度 */}
+            <div className="mb-3 md:hidden">
+              {panelDefs.length > 1 ? (
+                <div className="-mx-1 mb-2 flex gap-1.5 overflow-x-auto px-1 pb-0.5">
+                  {panelDefs.map((p) => (
+                    <button
+                      key={p.key}
+                      onClick={() => setMobilePanel(p.key)}
+                      className={cn(
+                        'shrink-0 rounded-full border px-3 py-1.5 text-[12.5px] font-medium transition-colors',
+                        activeMobile?.key === p.key
+                          ? 'border-primary bg-primary-soft text-primary'
+                          : 'border-border bg-surface text-muted'
+                      )}
+                    >
+                      {p.label}
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+              <div className="min-w-0">{activeMobile?.node}</div>
+            </div>
+
+            {/* 桌面：网格 */}
+            <div className={cn('mb-5 hidden gap-4 md:grid', gridCls)}>
+              {panelDefs.map((p, i) => (
+                <div
+                  key={p.key}
+                  className={cn(
+                    // min-w-0：grid item 默认 min-width:auto，长文本（教师列表、备注）
+                    // 会把列撑得比可用宽度更宽，表现为内容溢出面板。
+                    // max-h：不加限制时 grid 行高会跟着内容一起长，面板内的 overflow 永远不触发，
+                    // 备注一多就把内容顶到卡片外（被 h-full + overflow-hidden 裁掉）。
+                    'min-w-0 lg:max-h-[min(480px,68vh)]',
+                    // 奇数个面板时，最后一个在中等屏幕下占满一行，避免留下半格空位
+                    panelDefs.length % 2 === 1 &&
+                      panelDefs.length > 1 &&
+                      i === panelDefs.length - 1 &&
+                      'lg:col-span-2 xl:col-span-1'
+                  )}
+                >
+                  {p.node}
+                </div>
+              ))}
+            </div>
+          </>
         )
       })()}
 
       {/* 工具栏 */}
-      <div className="mb-4 space-y-3">
+      <div className="mb-3 space-y-2.5 md:mb-4 md:space-y-3">
         {L.showSearch ? (
           <div className="relative">
             <Search size={16} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-faint" />
@@ -393,7 +444,7 @@ export default function Workbench() {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="搜索网站名称、网址或备注…"
-              className="h-11 w-full rounded-xl border border-border bg-surface pl-10 pr-9 text-sm text-text placeholder:text-faint outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20"
+              className="h-10 w-full rounded-xl border border-border bg-surface pl-10 pr-9 md:h-11 text-sm text-text placeholder:text-faint outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20"
             />
             {query ? (
               <button
@@ -406,7 +457,8 @@ export default function Workbench() {
           </div>
         ) : null}
 
-        <div className="flex flex-wrap items-center gap-2">
+        {/* 手机上一行横向滚动，避免筛选器 + 分类胶囊换行占掉两行高度 */}
+        <div className="-mx-3 flex flex-nowrap items-center gap-2 overflow-x-auto px-3 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden [&>*]:shrink-0 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0">
           {L.showQuickFilter ? (
             <div className="flex items-center gap-1 rounded-xl border border-border bg-surface p-1">
               {[
@@ -428,7 +480,7 @@ export default function Workbench() {
             </div>
           ) : null}
 
-          <div className="flex flex-1 flex-wrap items-center gap-1.5">
+          <div className="flex flex-1 flex-nowrap items-center gap-1.5 [&>*]:shrink-0 sm:flex-wrap">
             <button
               onClick={() => setCatFilter('all')}
               className={cn(
@@ -513,7 +565,7 @@ export default function Workbench() {
           onDragStart={onDragStart}
           onDragEnd={onDragEnd}
         >
-          <div className="space-y-6" data-guide="site-grid">
+          <div className="space-y-4 md:space-y-6" data-guide="site-grid">
             {dragDisabled ? (
               <p className="text-[12px] text-faint">搜索状态下已暂停拖拽排序，清空搜索后可继续拖动。</p>
             ) : null}
@@ -568,6 +620,10 @@ export default function Workbench() {
         site={editingSite}
         categories={categories}
         defaultCategoryId={defaultCat}
+        onDelete={(s) => {
+          setEditorOpen(false)
+          void onDelete(s)
+        }}
       />
       <CategoryManagerModal open={showCatMgr} onClose={() => setShowCatMgr(false)} />
       <LayoutPanel open={showLayout} onClose={() => setShowLayout(false)} />

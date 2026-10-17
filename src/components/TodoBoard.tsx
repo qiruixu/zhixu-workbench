@@ -42,7 +42,7 @@ export function TodoBoard() {
   return (
     <div
       data-guide="todos"
-      className="flex h-full min-h-0 flex-col rounded-2xl border border-border bg-surface p-4"
+      className="flex h-full min-h-0 flex-col rounded-2xl border border-border bg-surface p-3 sm:p-4"
     >
       {/* 头部 */}
       <div className="mb-2.5 flex items-center justify-between gap-2">
@@ -86,7 +86,7 @@ export function TodoBoard() {
       {/* 列表 */}
       <div className="min-h-0 flex-1 space-y-1.5 overflow-y-auto">
         {pending.length === 0 ? (
-          <div className="flex h-full min-h-[104px] flex-col items-center justify-center rounded-xl border border-dashed border-border px-4 py-6 text-center">
+          <div className="flex min-h-[84px] flex-col items-center justify-center rounded-xl border border-dashed border-border px-4 py-4 text-center sm:h-full sm:min-h-[104px] sm:py-6">
             <ListTodo size={22} className="text-faint" />
             <p className="mt-2 text-[13px] text-muted">
               {done.length ? '待办都完成了' : '还没有待办'}

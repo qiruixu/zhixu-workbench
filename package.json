@@ -1,7 +1,7 @@
 {
   "name": "zhixu-workbench",
   "private": true,
-  "version": "1.2.1",
+  "version": "1.3.0",
   "type": "module",
   "description": "智序工作台 · 个性化网站导航 + 多模型 AI 助手（BYOK）",
   "scripts": {

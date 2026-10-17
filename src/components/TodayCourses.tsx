@@ -198,7 +198,7 @@ export function TodayCourses() {
       {...dropProps}
       data-dropzone="timetable"
       className={cn(
-        'relative flex h-full min-w-0 flex-col overflow-hidden rounded-2xl border bg-surface p-4 transition-colors',
+        'relative flex h-full min-w-0 flex-col overflow-hidden rounded-2xl border bg-surface p-3 sm:p-4 transition-colors',
         dragging ? 'border-primary ring-2 ring-primary/25' : 'border-border'
       )}
     >
@@ -391,7 +391,7 @@ export function TodayCourses() {
 
       {/* 主体 */}
       {!meta ? (
-        <div className="flex flex-1 flex-col items-center justify-center rounded-xl border border-dashed border-border-strong px-4 py-8 text-center">
+        <div className="flex flex-1 flex-col items-center justify-center rounded-xl border border-dashed border-border-strong px-3 py-5 text-center sm:px-4 sm:py-8">
           {busy ? (
             <>
               <Spinner />
@@ -399,14 +399,19 @@ export function TodayCourses() {
             </>
           ) : (
             <>
-              <FileSpreadsheet size={26} className="text-faint" />
-              <p className="mt-2.5 text-[13.5px] font-medium text-text">把课表文件拖到这里</p>
-              <p className="mt-1 max-w-[300px] text-[12px] leading-relaxed text-muted">
+              <FileSpreadsheet size={22} className="text-faint sm:size-[26px]" />
+              <p className="mt-2 text-[13px] font-medium text-text sm:mt-2.5 sm:text-[13.5px]">
+                把课表文件拖到这里
+              </p>
+              <p className="mt-1 max-w-[300px] text-[11.5px] leading-relaxed text-muted sm:hidden">
+                支持 xls / xlsx / csv / rtf / pdf，拖入即可
+              </p>
+              <p className="mt-1 hidden max-w-[300px] text-[12px] leading-relaxed text-muted sm:block">
                 支持 .xls / .xlsx / .csv / .rtf（含 .doc）/ .pdf。导入后即可按天查看课程与教室，随时可再次拖入更新。
               </p>
               <button
                 onClick={() => fileRef.current?.click()}
-                className="mt-3 rounded-xl border border-border-strong bg-surface px-3 py-1.5 text-[12.5px] text-text transition-colors hover:bg-surface-2"
+                className="mt-2.5 rounded-xl border border-border-strong bg-surface px-3 py-1.5 text-[12.5px] text-text transition-colors hover:bg-surface-2 sm:mt-3"
               >
                 选择文件
               </button>

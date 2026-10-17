@@ -153,7 +153,7 @@ export function MemoCalendar() {
   const openCount = dayNotes.filter((n) => !n.done).length
 
   return (
-    <div className="flex h-full flex-col rounded-2xl border border-border bg-surface p-4">
+    <div className="flex h-full flex-col rounded-2xl border border-border bg-surface p-3 sm:p-4">
       {/* 头部 */}
       <div className="mb-3 flex items-center justify-between">
         <div className="flex items-center gap-2">

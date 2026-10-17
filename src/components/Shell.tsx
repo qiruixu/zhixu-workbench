@@ -147,9 +147,9 @@ export function Shell() {
       </aside>
 
       {/* 主区域 */}
-      <main className="min-w-0 flex-1 pb-20 md:pb-0">
+      <main className="min-w-0 flex-1 pb-[calc(4.25rem+env(safe-area-inset-bottom))] md:pb-0">
         {/* 移动端顶栏 */}
-        <header className="sticky top-0 z-30 flex items-center justify-between border-b border-border bg-surface/85 px-4 py-3 backdrop-blur md:hidden">
+        <header className="sticky top-0 z-30 flex items-center justify-between border-b border-border bg-surface/85 px-3 py-2.5 backdrop-blur md:hidden">
           <div className="flex items-center gap-2">
             <img
               src={logoUrl}
@@ -171,7 +171,7 @@ export function Shell() {
       </main>
 
       {/* 移动端底部导航 */}
-      <nav className="fixed bottom-0 left-0 right-0 z-30 flex border-t border-border bg-surface/95 backdrop-blur md:hidden">
+      <nav className="fixed bottom-0 left-0 right-0 z-30 flex border-t border-border bg-surface/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden">
         {NAV.map(({ to, label, icon: Icon, end }) => (
           <NavLink
             key={to}
@@ -179,7 +179,7 @@ export function Shell() {
             end={end}
             className={({ isActive }) =>
               cn(
-                'flex flex-1 flex-col items-center gap-1 py-2.5 text-[11px] transition-colors',
+                'flex flex-1 flex-col items-center gap-0.5 py-2 text-[10.5px] transition-colors',
                 isActive ? 'text-primary' : 'text-muted'
               )
             }

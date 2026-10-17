@@ -120,7 +120,7 @@ export function WeatherCard() {
   }, [data])
 
   return (
-    <div className="flex h-full flex-col rounded-2xl border border-border bg-surface p-4">
+    <div className="flex h-full flex-col rounded-2xl border border-border bg-surface p-3 sm:p-4">
       {/* 头部 */}
       <div className="mb-3 flex items-center justify-between gap-2">
         <div className="flex min-w-0 items-center gap-2">

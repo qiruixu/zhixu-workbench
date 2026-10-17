@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Globe, Sparkles } from 'lucide-react'
+import { Globe, Sparkles, Trash2 } from 'lucide-react'
 import type { Category, Site } from '../lib/types'
 import { addSite, updateSite } from '../lib/navRepo'
 import { normalizeUrl } from '../lib/utils'
@@ -13,12 +13,15 @@ export function SiteEditorModal({
   site,
   categories,
   defaultCategoryId,
+  onDelete,
 }: {
   open: boolean
   onClose: () => void
   site: Site | null
   categories: Category[]
   defaultCategoryId?: string | null
+  /** 手机上卡片不显示删除按钮（操作区太挤），删除入口收进这里 */
+  onDelete?: (site: Site) => void
 }) {
   const { toast } = useApp()
   const [title, setTitle] = useState('')
@@ -95,6 +98,15 @@ export function SiteEditorModal({
       description="名称与网址为必填项，其余可留空。图标留空时会自动尝试获取网站图标。"
       footer={
         <>
+          {site && onDelete ? (
+            <Button
+              variant="ghost"
+              className="mr-auto text-danger hover:text-danger"
+              onClick={() => onDelete(site)}
+            >
+              <Trash2 size={14} /> 删除
+            </Button>
+          ) : null}
           <Button variant="ghost" onClick={onClose}>
             取消
           </Button>
