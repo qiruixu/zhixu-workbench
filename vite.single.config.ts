@@ -35,6 +35,9 @@ export default defineConfig({
     // 产物文件名固定（app.js），直接覆盖即可。
     emptyOutDir: false,
     sourcemap: false,
+    // 图片一律内联成 base64：单文件版不能有外部资源引用，
+    // 且 assetFileNames 是固定的 app.[ext]，png 会与 css 撞名。
+    assetsInlineLimit: 100_000_000,
     rollupOptions: {
       output: {
         format: 'iife',

@@ -8,8 +8,8 @@ import {
   Settings as SettingsIcon,
   Sparkles,
   Sun,
-  Workflow,
 } from 'lucide-react'
+import logoUrl from '../assets/logo.png'
 import { db } from '../lib/db'
 import type { AIConfig } from '../lib/types'
 import { cn } from '../lib/utils'
@@ -83,7 +83,7 @@ export function Shell() {
     return (
       <div className="flex h-screen items-center justify-center">
         <div className="flex flex-col items-center gap-3 text-muted">
-          <Workflow size={26} className="animate-pulse" />
+          <img src={logoUrl} alt="" className="h-8 w-8 animate-pulse object-contain" />
           <span className="text-sm">正在加载本地数据…</span>
         </div>
       </div>
@@ -95,9 +95,12 @@ export function Shell() {
       {/* 桌面侧边栏 */}
       <aside className="sticky top-0 hidden h-screen w-[236px] shrink-0 flex-col border-r border-border bg-surface/70 px-3.5 py-4 backdrop-blur md:flex">
         <div className="mb-6 flex items-center gap-2.5 px-1.5">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-fg shadow-sm">
-            <Workflow size={19} />
-          </div>
+          <img
+            src={logoUrl}
+            alt="智序工作台"
+            className="h-9 w-9 shrink-0 select-none object-contain"
+            draggable={false}
+          />
           <div className="leading-tight">
             <div className="text-[15px] font-semibold tracking-tight text-text">智序工作台</div>
             <div className="text-[11px] text-faint">导航 · AI 助手</div>
@@ -148,9 +151,12 @@ export function Shell() {
         {/* 移动端顶栏 */}
         <header className="sticky top-0 z-30 flex items-center justify-between border-b border-border bg-surface/85 px-4 py-3 backdrop-blur md:hidden">
           <div className="flex items-center gap-2">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary text-primary-fg">
-              <Workflow size={15} />
-            </div>
+            <img
+              src={logoUrl}
+              alt=""
+              className="h-7 w-7 shrink-0 select-none object-contain"
+              draggable={false}
+            />
             <span className="text-[14px] font-semibold text-text">
               {NAV.find((n) => (n.end ? loc.pathname === n.to : loc.pathname.startsWith(n.to)))?.label ??
                 '智序工作台'}
